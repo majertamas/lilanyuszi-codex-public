@@ -1,0 +1,6 @@
+<p-button [label]="label()" [severity]="severity()" [size]="size()" [variant]="variant()" (onClick)="onClick.emit()"
+          [styleClass]="styleClass()" [rounded]="rounded">
+  @if (icon()) {
+    <span class="material-icons" [class]="iconStyleClass()">{{ icon() }}</span>
+  }
+</p-button>

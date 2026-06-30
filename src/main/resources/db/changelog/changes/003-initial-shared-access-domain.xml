@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+            http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="001-create-shared-access" author="majer-tamas">
+        <createTable tableName="shared_access">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="canonical_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="owner_user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="shared_access"
+                baseColumnNames="owner_user_id"
+                referencedTableName="app_user"
+                referencedColumnNames="id"
+                constraintName="fk_shared_access_owner_user"/>
+
+        <addUniqueConstraint
+                tableName="shared_access"
+                columnNames="owner_user_id, type, canonical_name"
+                constraintName="uk_shared_access_owner_type_canonical_name"/>
+    </changeSet>
+
+    <changeSet id="002-create-shared-access-member" author="majer-tamas">
+        <createTable tableName="shared_access_member">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="shared_access_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint
+                tableName="shared_access_member"
+                columnNames="shared_access_id, user_id"
+                constraintName="uk_shared_access_member_access_user"/>
+
+        <addForeignKeyConstraint
+                baseTableName="shared_access_member"
+                baseColumnNames="shared_access_id"
+                referencedTableName="shared_access"
+                referencedColumnNames="id"
+                constraintName="fk_shared_access_member_access"
+                onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+                baseTableName="shared_access_member"
+                baseColumnNames="user_id"
+                referencedTableName="app_user"
+                referencedColumnNames="id"
+                constraintName="fk_shared_access_member_user"/>
+    </changeSet>
+
+    <changeSet id="003-create-shared-access-alias" author="majer-tamas">
+        <createTable tableName="shared_access_alias">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="shared_access_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="alias" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint
+                tableName="shared_access_alias"
+                columnNames="shared_access_id, user_id"
+                constraintName="uk_shared_access_alias_access_user"/>
+
+        <addForeignKeyConstraint
+                baseTableName="shared_access_alias"
+                baseColumnNames="shared_access_id"
+                referencedTableName="shared_access"
+                referencedColumnNames="id"
+                constraintName="fk_shared_access_alias_access"
+                onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+                baseTableName="shared_access_alias"
+                baseColumnNames="user_id"
+                referencedTableName="app_user"
+                referencedColumnNames="id"
+                constraintName="fk_shared_access_alias_user"/>
+    </changeSet>
+
+    <changeSet id="004-create-shopping-list" author="majer-tamas">
+        <createTable tableName="shopping_list">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="shopping_list"
+                baseColumnNames="id"
+                referencedTableName="shared_access"
+                referencedColumnNames="id"
+                constraintName="fk_shopping_list_shared_access"
+                onDelete="CASCADE"/>
+    </changeSet>
+
+    <changeSet id="005-create-unit" author="majer-tamas">
+        <createTable tableName="unit">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="006-create-shopping-item" author="majer-tamas">
+        <createTable tableName="shopping_item">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="shopping_list_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantity" type="DECIMAL(10,2)"/>
+            <column name="unit_id" type="BIGINT"/>
+            <column name="checked" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="shopping_item"
+                baseColumnNames="shopping_list_id"
+                referencedTableName="shopping_list"
+                referencedColumnNames="id"
+                constraintName="fk_shopping_item_shopping_list"
+                onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+                baseTableName="shopping_item"
+                baseColumnNames="unit_id"
+                referencedTableName="unit"
+                referencedColumnNames="id"
+                constraintName="fk_shopping_item_unit"/>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,130 @@
+<p-table [value]="lists" dataKey="id" editMode="row">
+  <ng-template #caption>
+    <div class="flex text-2xl font-bold text-center justify-between items-center">
+      <span>Lists</span>
+      <p-button label="Add New List" (click)="dialogVisible = true" (keydown.enter)="dialogVisible = true"/>
+    </div>
+  </ng-template>
+  <ng-template #header>
+    <tr>
+      <th scope="col">Group Name</th>
+      <th scope="col">Group Type</th>
+      <th scope="col">My Role</th>
+      <th scope="col"></th>
+    </tr>
+  </ng-template>
+  <ng-template #body let-list let-editing="editing" let-ri="rowIndex">
+    <tr [pEditableRow]="list">
+      <td>
+        <p-cellEditor>
+          <ng-template #input>
+            <input
+              pInputText type="text"
+              [(ngModel)]="list.name"/>
+          </ng-template>
+          <ng-template #output>
+            {{ list.name }}
+          </ng-template>
+        </p-cellEditor>
+      </td>
+      <td>
+        {{ list.type }}
+      </td>
+      <td>
+        <p-tag
+          [value]="list.role"
+          [severity]="getSeverity(list.role)"/>
+      </td>
+      <td>
+        <div class="flex items-center justify-end gap-2">
+
+          @if (!editing && list.role !== 'MEMBER') {
+            <button
+              pButton
+              pRipple
+              type="button"
+              pInitEditableRow
+              icon="pi pi-pencil"
+              (click)="onRowEditInit(list)"
+              text
+              rounded
+              severity="secondary"
+            ></button>
+          }
+          @if (!editing) {
+            <button
+              pButton
+              pRipple
+              type="button"
+              icon="pi pi-trash"
+              (click)="confirmDelete($event, list)"
+              text
+              rounded
+              severity="secondary"
+            ></button>
+          }
+          @if (editing && list.role !== 'MEMBER') {
+            <button
+              pButton
+              pRipple
+              type="button"
+              pSaveEditableRow
+              icon="pi pi-check"
+              (click)="onRowEditSave(list, ri)"
+              text
+              rounded
+              severity="secondary"
+            ></button>
+            <button
+              pButton
+              pRipple
+              type="button"
+              pCancelEditableRow
+              icon="pi pi-times"
+              (click)="onRowEditCancel(list, ri)"
+              text
+              rounded
+              severity="secondary"
+            ></button>
+          }
+        </div>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
+
+
+<p-confirmdialog/>
+
+<p-dialog [(visible)]="dialogVisible" [modal]="true">
+  <ng-template #header>
+    <div>Add New List</div>
+  </ng-template>
+
+  <form [formGroup]="form" class="flex flex-col gap-4">
+
+    <div>
+      <input
+        class="w-full"
+        type="text"
+        pInputText
+        formControlName="groupName">
+    </div>
+
+    <div>
+      <p-select
+        class="w-full"
+        appendTo="body"
+        formControlName="groupType"
+        [options]="groupTypes"
+        placeholder="Select a type"
+      ></p-select>
+    </div>
+
+  </form>
+
+  <ng-template #footer>
+    <p-button label="Cancel" [text]="true" severity="secondary" (click)="dialogVisible = false"/>
+    <p-button label="Save" [outlined]="true" severity="primary" (click)="addNewList()"/>
+  </ng-template>
+</p-dialog>

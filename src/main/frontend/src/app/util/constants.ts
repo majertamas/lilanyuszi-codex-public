@@ -1,0 +1,11 @@
+export const API: string = '/api';
+export const BEARER: string = 'Bearer';
+export const SPACE: string = ' ';
+export const AUTH: string = '/auth';
+export const REFRESH: string = '/refresh';
+export const DARK_MODE_CSS_SELECTOR: string = 'my-app-dark';
+export const AUTH_STATE_STORAGE_KEY: string = 'authState';
+export const DARK_MODE_STORAGE_KEY: string = 'darkMode';
+export const REMEMBER_ME_STORAGE_KEY: string = 'rememberMe';
+export const EMPTY_STRING: string = '';
+export const SHOPPING_LIST_ITEMS_BASE_PATH: string = '/api/products';

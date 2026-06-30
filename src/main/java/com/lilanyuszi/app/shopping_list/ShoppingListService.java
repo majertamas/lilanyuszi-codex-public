@@ -1,0 +1,138 @@
+package com.lilanyuszi.app.shopping_list;
+
+import com.lilanyuszi.app.api.LilanyusziException;
+import com.lilanyuszi.app.shared_access.SharedAccess;
+import com.lilanyuszi.app.shared_access.SharedAccessService;
+import com.lilanyuszi.app.shared_access.SharedAccessType;
+import com.lilanyuszi.app.shared_access_alias.SharedAccessAliasService;
+import com.lilanyuszi.app.shared_access_member.SharedAccessMember;
+import com.lilanyuszi.app.shared_access_member.SharedAccessMemberService;
+import com.lilanyuszi.app.user.User;
+import com.lilanyuszi.app.user.UserService;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+import static com.lilanyuszi.app.util.Constant.SHOPPING_LIST_ACCESS_DENIED;
+import static com.lilanyuszi.app.util.Constant.SHOPPING_LIST_NOT_FOUND;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class ShoppingListService {
+
+    private final ShoppingListRepository shoppingListRepository;
+    private final SharedAccessService sharedAccessService;
+    private final SharedAccessMemberService sharedAccessMemberService;
+    private final SharedAccessAliasService sharedAccessAliasService;
+    private final UserService userService;
+
+    @Transactional
+    public ShoppingListResponse create(ShoppingListCreateRequest request) throws LilanyusziException {
+        User user = userService.getAuthenticatedUser();
+        SharedAccess sharedAccess = sharedAccessService.create(user, SharedAccessType.SHOPPING, request.name());
+
+        ShoppingList shoppingList = shoppingListRepository.save(ShoppingList.builder()
+                .sharedAccess(sharedAccess)
+                .build());
+
+        sharedAccessMemberService.save(SharedAccessMember.builder()
+                .sharedAccess(sharedAccess)
+                .user(user)
+                .build());
+
+        log.info("CREATED SHOPPING LIST ID: {}, OWNER USER ID: {}", shoppingList.getId(), user.getId());
+        return toResponse(shoppingList, user.getId());
+    }
+
+    public ShoppingListResponse findById(Long id) throws LilanyusziException {
+        Long userId = userService.getAuthenticatedUserId();
+        ShoppingList shoppingList = findAccessibleShoppingList(id, userId);
+        return toResponse(shoppingList, userId);
+    }
+
+    public List<ShoppingListResponse> findAllForAuthenticatedUser() throws LilanyusziException {
+        Long userId = userService.getAuthenticatedUserId();
+        List<Long> sharedAccessIds = sharedAccessMemberService.findByUserId(userId).stream()
+                .map(member -> member.getSharedAccess().getId())
+                .toList();
+
+        return shoppingListRepository.findBySharedAccessIdIn(sharedAccessIds).stream()
+                .map(shoppingList -> toResponse(shoppingList, userId))
+                .toList();
+    }
+
+    @Transactional
+    public void deleteById(Long id) throws LilanyusziException {
+        User user = userService.getAuthenticatedUser();
+        ShoppingList shoppingList = shoppingListRepository.findById(id)
+                .orElseThrow(() -> new LilanyusziException(SHOPPING_LIST_NOT_FOUND));
+
+        if (!isOwner(shoppingList.getSharedAccess(), user.getId())) {
+            throw new LilanyusziException(SHOPPING_LIST_ACCESS_DENIED);
+        }
+
+        deleteShoppingList(shoppingList);
+    }
+
+    @Transactional
+    public void leave(Long id) throws LilanyusziException {
+        User user = userService.getAuthenticatedUser();
+        ShoppingList shoppingList = shoppingListRepository.findById(id)
+                .orElseThrow(() -> new LilanyusziException(SHOPPING_LIST_NOT_FOUND));
+        Long sharedAccessId = shoppingList.getSharedAccess().getId();
+
+        if (isOwner(shoppingList.getSharedAccess(), user.getId())) {
+            deleteShoppingList(shoppingList);
+            return;
+        }
+
+        if (!sharedAccessMemberService.existsBySharedAccessIdAndUserId(sharedAccessId, user.getId())) {
+            throw new LilanyusziException(SHOPPING_LIST_ACCESS_DENIED);
+        }
+
+        sharedAccessAliasService.deleteBySharedAccessIdAndUserId(sharedAccessId, user.getId());
+        sharedAccessMemberService.deleteBySharedAccessIdAndUserId(sharedAccessId, user.getId());
+        log.info("USER ID: {} LEFT SHOPPING LIST ID: {}", user.getId(), id);
+    }
+
+    private ShoppingList findAccessibleShoppingList(Long id, Long userId) throws LilanyusziException {
+        ShoppingList shoppingList = shoppingListRepository.findById(id)
+                .orElseThrow(() -> new LilanyusziException(SHOPPING_LIST_NOT_FOUND));
+
+        boolean member = sharedAccessMemberService.existsBySharedAccessIdAndUserId(
+                shoppingList.getSharedAccess().getId(),
+                userId
+        );
+        if (!member) {
+            throw new LilanyusziException(SHOPPING_LIST_ACCESS_DENIED);
+        }
+
+        return shoppingList;
+    }
+
+    private ShoppingListResponse toResponse(ShoppingList shoppingList, Long userId) {
+        SharedAccess sharedAccess = shoppingList.getSharedAccess();
+        String sharedAccessName = sharedAccess.getName();
+        String alias = sharedAccessAliasService
+                .findAliasBySharedAccessIdAndUserId(sharedAccess.getId(), userId)
+                .orElse(sharedAccessName);
+        return new ShoppingListResponse(shoppingList.getId(), sharedAccess.getId(), sharedAccessName, alias, sharedAccess.getCreatedAt(), sharedAccess.getUpdatedAt());
+    }
+
+    private boolean isOwner(SharedAccess sharedAccess, Long userId) {
+        return sharedAccess.getOwnerUser().getId().equals(userId);
+    }
+
+    private void deleteShoppingList(ShoppingList shoppingList) {
+        Long sharedAccessId = shoppingList.getSharedAccess().getId();
+        sharedAccessAliasService.deleteBySharedAccessId(sharedAccessId);
+        sharedAccessMemberService.deleteBySharedAccessId(sharedAccessId);
+        shoppingListRepository.delete(shoppingList);
+        sharedAccessService.deleteById(sharedAccessId);
+        log.info("DELETED SHOPPING LIST ID: {}, SHARED ACCESS ID: {}", shoppingList.getId(), sharedAccessId);
+    }
+}

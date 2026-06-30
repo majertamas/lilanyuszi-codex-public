@@ -1,0 +1,155 @@
+<p-table [value]="shoppingLists" dataKey="id" editMode="row">
+  <ng-template #caption>
+    <div class="text-2xl font-bold text-center">
+      Shopping Lists
+    </div>
+  </ng-template>
+  <ng-template #header>
+    <tr>
+      <th scope="col">Group Name</th>
+      <th scope="col">My Role</th>
+      <th scope="col"></th>
+    </tr>
+  </ng-template>
+  <ng-template #body let-shoppingList let-editing="editing" let-ri="rowIndex">
+    <tr [pEditableRow]="shoppingList">
+      <td>
+        <p-cellEditor>
+          <ng-template #input>
+            <input
+              pInputText type="text"
+              [(ngModel)]="shoppingList.name"/>
+          </ng-template>
+          <ng-template #output>
+            {{ shoppingList.name }}
+          </ng-template>
+        </p-cellEditor>
+      </td>
+      <td>
+        <p-tag
+          [value]="shoppingList.role"
+          [severity]="getSeverity(shoppingList.role)"/>
+      </td>
+      <td>
+        <div class="flex items-center justify-end gap-2">
+          @if (shoppingList.role !== 'MEMBER') {
+            @if (!editing) {
+              <button
+                pButton
+                pRipple
+                type="button"
+                pInitEditableRow
+                icon="pi pi-pencil"
+                (click)="onRowEditInit(shoppingList)"
+                text
+                rounded
+                severity="secondary"
+              ></button>
+            } @else {
+              <button
+                pButton
+                pRipple
+                type="button"
+                pSaveEditableRow
+                icon="pi pi-check"
+                (click)="onRowEditSave(shoppingList, ri)"
+                text
+                rounded
+                severity="secondary"
+              ></button>
+              <button
+                pButton
+                pRipple
+                type="button"
+                pCancelEditableRow
+                icon="pi pi-times"
+                (click)="onRowEditCancel(shoppingList, ri)"
+                text
+                rounded
+                severity="secondary"
+              ></button>
+            }
+          }
+        </div>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
+
+@for (shoppingList of shoppingLists; track shoppingList.id) {
+  <p-card [style]="{ width: '25rem', overflow: 'hidden' }">
+    <!--    <ng-template #header>-->
+    <!--      <img alt="Card" class="w-full" src="https://primefaces.org/cdn/primeng/images/card-ng.jpg" />-->
+    <!--    </ng-template>-->
+    <ng-template #title> {{ shoppingList.alias ? shoppingList.alias : shoppingList.name }}</ng-template>
+    <ng-template #subtitle> {{ shoppingList.type }}</ng-template>
+    <p>
+      Owner: {{ getOwner(shoppingList)?.name }} <br/>
+    </p>
+    @if (getMembers(shoppingList).length > 0) {
+      <p>Members:</p>
+    }
+    @for (member of getMembers(shoppingList); track member.userId) {
+      <p>
+        {{ member.name }}
+        @if (isOwner(shoppingList)) {
+          <p-button label="Kick off" severity="secondary" (click)="removeMember(shoppingList, member)"/>
+        }
+      </p>
+    }
+    <ng-template #footer>
+      <div class="flex gap-4 mt-2">
+        <p-button label="Open" class="w-full" styleClass="w-full"/>
+      </div>
+      <div class="flex gap-4 mt-2">
+        <p-button
+          [label]="shoppingList.isOwner ? 'Delete Group' : 'Leave Group'"
+          class="w-full"
+          styleClass="w-full"
+          severity="secondary"
+          (click)="deleteOrLeave(shoppingList)"
+          (keydown.enter)="deleteOrLeave(shoppingList)"
+        />
+      </div>
+      <div class="flex gap-4 mt-2">
+        <p-button
+          label="Rename"
+          class="w-full"
+          styleClass="w-full"
+          severity="secondary"
+          (click)="rename()"
+          (keydown.enter)="rename()"
+        />
+      </div>
+      @if (renaming) {
+        <div class="flex gap-4 mt-2">
+          <input
+            class="w-full"
+            pInputText
+            placeholder="Add new name"
+            [(ngModel)]="newName"
+          />
+        </div>
+        <div class="flex gap-2 mt-2">
+          <p-button
+            label="Cancel Renaming"
+            class="w-full"
+            styleClass="w-full"
+            severity="secondary"
+            (click)="newName = ''; renaming = false"
+            (keydown.enter)="newName = ''; renaming = false"
+          />
+          <p-button
+            label="Save New Name"
+            class="w-full"
+            styleClass="w-full"
+            severity="secondary"
+            (click)="doRename(shoppingList)"
+            (keydown.enter)="doRename(shoppingList)"
+          />
+        </div>
+      }
+    </ng-template>
+  </p-card>
+}
+

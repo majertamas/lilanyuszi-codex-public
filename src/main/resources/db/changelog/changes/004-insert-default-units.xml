@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+            http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="004-insert-default-units" author="tamas">
+
+        <insert tableName="unit">
+            <column name="name" value="db"/>
+            <column name="created_at" valueDate="2025-01-01T00:00:00"/>
+        </insert>
+
+        <insert tableName="unit">
+            <column name="name" value="g"/>
+            <column name="created_at" valueDate="2025-01-01T00:00:00"/>
+        </insert>
+
+        <insert tableName="unit">
+            <column name="name" value="dkg"/>
+            <column name="created_at" valueDate="2025-01-01T00:00:00"/>
+        </insert>
+
+        <insert tableName="unit">
+            <column name="name" value="kg"/>
+            <column name="created_at" valueDate="2025-01-01T00:00:00"/>
+        </insert>
+
+        <insert tableName="unit">
+            <column name="name" value="ml"/>
+            <column name="created_at" valueDate="2025-01-01T00:00:00"/>
+        </insert>
+
+        <insert tableName="unit">
+            <column name="name" value="cl"/>
+            <column name="created_at" valueDate="2025-01-01T00:00:00"/>
+        </insert>
+
+        <insert tableName="unit">
+            <column name="name" value="dl"/>
+            <column name="created_at" valueDate="2025-01-01T00:00:00"/>
+        </insert>
+
+        <insert tableName="unit">
+            <column name="name" value="l"/>
+            <column name="created_at" valueDate="2025-01-01T00:00:00"/>
+        </insert>
+
+        <insert tableName="unit">
+            <column name="name" value="tk"/>
+            <column name="created_at" valueDate="2025-01-01T00:00:00"/>
+        </insert>
+
+        <insert tableName="unit">
+            <column name="name" value="ek"/>
+            <column name="created_at" valueDate="2025-01-01T00:00:00"/>
+        </insert>
+
+        <insert tableName="unit">
+            <column name="name" value="csipet"/>
+            <column name="created_at" valueDate="2025-01-01T00:00:00"/>
+        </insert>
+
+        <insert tableName="unit">
+            <column name="name" value="gerezd"/>
+            <column name="created_at" valueDate="2025-01-01T00:00:00"/>
+        </insert>
+
+        <insert tableName="unit">
+            <column name="name" value="szelet"/>
+            <column name="created_at" valueDate="2025-01-01T00:00:00"/>
+        </insert>
+
+        <insert tableName="unit">
+            <column name="name" value="marék"/>
+            <column name="created_at" valueDate="2025-01-01T00:00:00"/>
+        </insert>
+
+        <insert tableName="unit">
+            <column name="name" value="csomag"/>
+            <column name="created_at" valueDate="2025-01-01T00:00:00"/>
+        </insert>
+
+        <insert tableName="unit">
+            <column name="name" value="doboz"/>
+            <column name="created_at" valueDate="2025-01-01T00:00:00"/>
+        </insert>
+
+        <insert tableName="unit">
+            <column name="name" value="üveg"/>
+            <column name="created_at" valueDate="2025-01-01T00:00:00"/>
+        </insert>
+
+        <insert tableName="unit">
+            <column name="name" value="konzerv"/>
+            <column name="created_at" valueDate="2025-01-01T00:00:00"/>
+        </insert>
+
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Open+Sans:ital,wdth,wght@0,75..100,300..800;1,75..100,300..800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Open+Sans:ital,wdth,wght@0,75..100,300..800;1,75..100,300..800&family=Orbitron:wght@400..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,100..900;1,100..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Open+Sans:ital,wdth,wght@0,75..100,300..800;1,75..100,300..800&family=Orbitron:wght@400..900&display=swap');
+@import "tailwindcss";
+@import "primeicons/primeicons.css";
+
+@plugin 'tailwindcss-primeui';
+/*@tailwind base;*/
+/*@tailwind components;*/
+@tailwind utilities;
+
+@theme {
+  --font-exo: "Exo 2", sans-serif;
+}
+
+:root {
+  --font-sans: "Exo 2", Orbitron, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --p-toast-content-padding: calc(var(--spacing) * 4) !important;
+}
+
+.my-app-dark {
+}
+
+.my-app-dark app-header,
+.my-app-dark app-footer {
+  background-color: #000 !important;
+}
+
+app-header,
+app-footer {
+  background-color: #fff !important;
+}
+
+app-m-button p-button button {
+  --p-button-padding-x: calc(var(--spacing) * 2);
+  --p-button-padding-y: calc(var(--spacing) * 2);
+}
+
+.my-app-dark .p-button-text.p-button-contrast {
+  color: var(--color-gray-300) !important;
+}
+
+.p-button-text.p-button-contrast {
+  color: var(--color-gray-800) !important;
+}
+
+.p-component.p-dialog {
+  @apply m-4;
+}
