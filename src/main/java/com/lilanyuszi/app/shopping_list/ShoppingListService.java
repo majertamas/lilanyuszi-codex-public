@@ -2,9 +2,9 @@ package com.lilanyuszi.app.shopping_list;
 
 import com.lilanyuszi.app.api.LilanyusziException;
 import com.lilanyuszi.app.shared_access.SharedAccess;
+import com.lilanyuszi.app.shared_access.SharedAccessDeletionService;
 import com.lilanyuszi.app.shared_access.SharedAccessService;
 import com.lilanyuszi.app.shared_access.SharedAccessType;
-import com.lilanyuszi.app.shared_access_alias.SharedAccessAliasService;
 import com.lilanyuszi.app.shared_access_member.SharedAccessMember;
 import com.lilanyuszi.app.shared_access_member.SharedAccessMemberService;
 import com.lilanyuszi.app.user.CurrentUserService;
@@ -27,9 +27,9 @@ public class ShoppingListService {
     private final ShoppingListRepository shoppingListRepository;
     private final SharedAccessService sharedAccessService;
     private final SharedAccessMemberService sharedAccessMemberService;
-    private final SharedAccessAliasService sharedAccessAliasService;
     private final CurrentUserService currentUserService;
     private final ShoppingListResponseMapper shoppingListResponseMapper;
+    private final SharedAccessDeletionService sharedAccessDeletionService;
 
     @Transactional
     public ShoppingListResponse create(ShoppingListCreateRequest request) throws LilanyusziException {
@@ -76,7 +76,7 @@ public class ShoppingListService {
             throw new LilanyusziException(SHOPPING_LIST_ACCESS_DENIED);
         }
 
-        deleteShoppingList(shoppingList);
+        sharedAccessDeletionService.deleteList(shoppingList.getSharedAccess().getId(), SharedAccessType.SHOPPING);
     }
 
     @Transactional
@@ -87,7 +87,7 @@ public class ShoppingListService {
         Long sharedAccessId = shoppingList.getSharedAccess().getId();
 
         if (isOwner(shoppingList.getSharedAccess(), user.getId())) {
-            deleteShoppingList(shoppingList);
+            sharedAccessDeletionService.deleteList(shoppingList.getSharedAccess().getId(), SharedAccessType.SHOPPING);
             return;
         }
 
@@ -95,8 +95,7 @@ public class ShoppingListService {
             throw new LilanyusziException(SHOPPING_LIST_ACCESS_DENIED);
         }
 
-        sharedAccessAliasService.deleteBySharedAccessIdAndUserId(sharedAccessId, user.getId());
-        sharedAccessMemberService.deleteBySharedAccessIdAndUserId(sharedAccessId, user.getId());
+        sharedAccessDeletionService.deleteAliasAndMembership(sharedAccessId, user.getId());
         log.info("USER ID: {} LEFT SHOPPING LIST ID: {}", user.getId(), id);
     }
 
@@ -117,14 +116,5 @@ public class ShoppingListService {
 
     private boolean isOwner(SharedAccess sharedAccess, Long userId) {
         return sharedAccess.getOwnerUser().getId().equals(userId);
-    }
-
-    private void deleteShoppingList(ShoppingList shoppingList) {
-        Long sharedAccessId = shoppingList.getSharedAccess().getId();
-        sharedAccessAliasService.deleteBySharedAccessId(sharedAccessId);
-        sharedAccessMemberService.deleteBySharedAccessId(sharedAccessId);
-        shoppingListRepository.delete(shoppingList);
-        sharedAccessService.deleteById(sharedAccessId);
-        log.info("DELETED SHOPPING LIST ID: {}, SHARED ACCESS ID: {}", shoppingList.getId(), sharedAccessId);
     }
 }
