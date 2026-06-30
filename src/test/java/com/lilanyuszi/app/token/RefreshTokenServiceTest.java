@@ -1,5 +1,6 @@
 package com.lilanyuszi.app.token;
 
+import com.lilanyuszi.app.api.LilanyusziException;
 import com.lilanyuszi.app.user.User;
 import com.lilanyuszi.app.user.UserRole;
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,7 @@ class RefreshTokenServiceTest {
     private RefreshTokenService refreshTokenService;
 
     @Test
-    void createRefreshTokenSavesHashedTokenAndReturnsRawToken() {
+    void createRefreshTokenSavesHashedTokenAndReturnsRawToken() throws LilanyusziException {
         User user = user();
 
         String rawToken = refreshTokenService.createRefreshToken(user);
@@ -55,7 +56,7 @@ class RefreshTokenServiceTest {
     }
 
     @Test
-    void rotateAndGetUserRevokesCurrentTokenAndCreatesNewToken() {
+    void rotateAndGetUserRevokesCurrentTokenAndCreatesNewToken() throws LilanyusziException {
         User user = user();
         RefreshToken currentToken = refreshToken(user, Instant.now().plusSeconds(60), null);
         when(refreshTokenRepository.findByTokenHash(refreshTokenService.hash(RAW_TOKEN)))
@@ -70,7 +71,7 @@ class RefreshTokenServiceTest {
     }
 
     @Test
-    void rotateAndGetUserThrowsWhenTokenDoesNotExist() {
+    void rotateAndGetUserThrowsWhenTokenDoesNotExist() throws LilanyusziException {
         when(refreshTokenRepository.findByTokenHash(refreshTokenService.hash(RAW_TOKEN)))
                 .thenReturn(Optional.empty());
 
@@ -84,37 +85,37 @@ class RefreshTokenServiceTest {
     }
 
     @Test
-    void rotateAndGetUserThrowsWhenTokenIsRevoked() {
+    void rotateAndGetUserThrowsWhenTokenIsRevoked() throws LilanyusziException {
         RefreshToken currentToken = refreshToken(user(), Instant.now().plusSeconds(60), Instant.now());
         when(refreshTokenRepository.findByTokenHash(refreshTokenService.hash(RAW_TOKEN)))
                 .thenReturn(Optional.of(currentToken));
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
+        LilanyusziException exception = assertThrows(
+                LilanyusziException.class,
                 () -> refreshTokenService.rotateAndGetUser(RAW_TOKEN)
         );
 
-        assertEquals("Refresh token revoked", exception.getMessage());
+        assertEquals("Refresh token revoked", exception.getExMessage().getText());
         verify(refreshTokenRepository, never()).save(any());
     }
 
     @Test
-    void rotateAndGetUserThrowsWhenTokenIsExpired() {
+    void rotateAndGetUserThrowsWhenTokenIsExpired() throws LilanyusziException {
         RefreshToken currentToken = refreshToken(user(), Instant.now().minusSeconds(60), null);
         when(refreshTokenRepository.findByTokenHash(refreshTokenService.hash(RAW_TOKEN)))
                 .thenReturn(Optional.of(currentToken));
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
+        LilanyusziException exception = assertThrows(
+                LilanyusziException.class,
                 () -> refreshTokenService.rotateAndGetUser(RAW_TOKEN)
         );
 
-        assertEquals("Refresh token expired", exception.getMessage());
+        assertEquals("Refresh token expired", exception.getExMessage().getText());
         verify(refreshTokenRepository, never()).save(any());
     }
 
     @Test
-    void revokeMarksTokenAsRevokedWhenTokenExists() {
+    void revokeMarksTokenAsRevokedWhenTokenExists() throws LilanyusziException {
         RefreshToken refreshToken = refreshToken(user(), Instant.now().plusSeconds(60), null);
         when(refreshTokenRepository.findByTokenHash(refreshTokenService.hash(RAW_TOKEN)))
                 .thenReturn(Optional.of(refreshToken));
@@ -126,7 +127,7 @@ class RefreshTokenServiceTest {
     }
 
     @Test
-    void revokeDoesNothingWhenTokenDoesNotExist() {
+    void revokeDoesNothingWhenTokenDoesNotExist() throws LilanyusziException {
         when(refreshTokenRepository.findByTokenHash(refreshTokenService.hash(RAW_TOKEN)))
                 .thenReturn(Optional.empty());
 
@@ -136,7 +137,7 @@ class RefreshTokenServiceTest {
     }
 
     @Test
-    void hashReturnsSameValueForSameToken() {
+    void hashReturnsSameValueForSameToken() throws LilanyusziException {
         String firstHash = refreshTokenService.hash(RAW_TOKEN);
         String secondHash = refreshTokenService.hash(RAW_TOKEN);
 
@@ -144,14 +145,14 @@ class RefreshTokenServiceTest {
     }
 
     @Test
-    void hashReturnsDifferentValuesForDifferentTokens() {
+    void hashReturnsDifferentValuesForDifferentTokens() throws LilanyusziException {
         String firstHash = refreshTokenService.hash(RAW_TOKEN);
         String secondHash = refreshTokenService.hash("other-token");
 
         assertNotEquals(firstHash, secondHash);
     }
 
-    private RefreshToken refreshToken(User user, Instant expiresAt, Instant revokedAt) {
+    private RefreshToken refreshToken(User user, Instant expiresAt, Instant revokedAt) throws LilanyusziException {
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setUser(user);
         refreshToken.setTokenHash(refreshTokenService.hash(RAW_TOKEN));

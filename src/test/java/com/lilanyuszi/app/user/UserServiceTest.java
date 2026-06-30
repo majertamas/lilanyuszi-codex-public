@@ -167,7 +167,7 @@ class UserServiceTest {
                 () -> userService.getAuthenticatedUser()
         );
 
-        assertEquals(USER_IS_NOT_AUTHENTICATED, exception.getMessages().get(0).getText());
+        assertEquals(USER_IS_NOT_AUTHENTICATED, exception.getExMessage().getText());
     }
 
     @Test
@@ -181,7 +181,7 @@ class UserServiceTest {
                 () -> userService.getAuthenticatedUser()
         );
 
-        assertEquals(USER_IS_NOT_AUTHENTICATED, exception.getMessages().get(0).getText());
+        assertEquals(USER_IS_NOT_AUTHENTICATED, exception.getExMessage().getText());
     }
 
     @Test
@@ -194,7 +194,7 @@ class UserServiceTest {
                 () -> userService.getAuthenticatedUser()
         );
 
-        assertEquals(USER_NOT_FOUND, exception.getMessages().get(0).getText());
+        assertEquals(USER_NOT_FOUND, exception.getExMessage().getText());
     }
 
     @Test

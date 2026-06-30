@@ -1,5 +1,6 @@
 package com.lilanyuszi.app.auth;
 
+import com.lilanyuszi.app.api.LilanyusziException;
 import com.lilanyuszi.app.token.AccessTokenService;
 import com.lilanyuszi.app.token.RefreshRotationResult;
 import com.lilanyuszi.app.token.RefreshTokenService;
@@ -28,7 +29,7 @@ class AuthSessionServiceTest {
     private AuthSessionService authSessionService;
 
     @Test
-    void refreshSessionRotatesRefreshTokenAndGeneratesAccessToken() {
+    void refreshSessionRotatesRefreshTokenAndGeneratesAccessToken() throws LilanyusziException {
         User user = new User();
         RefreshRotationResult rotationResult = new RefreshRotationResult(user, "new-refresh-token");
         when(refreshTokenService.rotateAndGetUser("old-refresh-token")).thenReturn(rotationResult);
@@ -41,14 +42,14 @@ class AuthSessionServiceTest {
     }
 
     @Test
-    void logoutRevokesRefreshTokenWhenPresent() {
+    void logoutRevokesRefreshTokenWhenPresent() throws LilanyusziException {
         authSessionService.logout("refresh-token");
 
         verify(refreshTokenService).revoke("refresh-token");
     }
 
     @Test
-    void logoutDoesNothingWhenRefreshTokenIsMissing() {
+    void logoutDoesNothingWhenRefreshTokenIsMissing() throws LilanyusziException {
         authSessionService.logout(null);
 
         verify(refreshTokenService, never()).revoke(null);

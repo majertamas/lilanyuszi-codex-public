@@ -1,5 +1,6 @@
 package com.lilanyuszi.app.token;
 
+import com.lilanyuszi.app.api.LilanyusziException;
 import com.lilanyuszi.app.user.User;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +22,7 @@ public class RefreshTokenService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final SecureRandom secureRandom = new SecureRandom();
 
-    public String createRefreshToken(User user) {
+    public String createRefreshToken(User user) throws LilanyusziException {
         byte[] randomBytes = new byte[64];
         secureRandom.nextBytes(randomBytes);
 
@@ -41,16 +42,16 @@ public class RefreshTokenService {
     }
 
     @Transactional
-    public RefreshRotationResult rotateAndGetUser(String rawToken) {
+    public RefreshRotationResult rotateAndGetUser(String rawToken) throws LilanyusziException {
         RefreshToken currentToken = refreshTokenRepository.findByTokenHash(hash(rawToken))
                 .orElseThrow(() -> new IllegalArgumentException("Invalid refresh token"));
 
         if (currentToken.getRevokedAt() != null) {
-            throw new IllegalArgumentException("Refresh token revoked");
+            throw new LilanyusziException("Refresh token revoked");
         }
 
         if (currentToken.getExpiresAt().isBefore(Instant.now())) {
-            throw new IllegalArgumentException("Refresh token expired");
+            throw new LilanyusziException("Refresh token expired");
         }
 
         User user = currentToken.getUser();
@@ -63,7 +64,7 @@ public class RefreshTokenService {
         return new RefreshRotationResult(user, newRefreshToken);
     }
 
-    public void revoke(String rawToken) {
+    public void revoke(String rawToken) throws LilanyusziException {
         String tokenHash = hash(rawToken);
 
         refreshTokenRepository.findByTokenHash(tokenHash)
@@ -73,13 +74,13 @@ public class RefreshTokenService {
                 });
     }
 
-    public String hash(String rawToken) {
+    public String hash(String rawToken) throws LilanyusziException {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(rawToken.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(hash);
         } catch (Exception e) {
-            throw new IllegalStateException("Could not hash refresh token", e);
+            throw new LilanyusziException("Could not hash refresh token");
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.lilanyuszi.app.auth;
 
+import com.lilanyuszi.app.api.LilanyusziException;
 import com.lilanyuszi.app.api.RestResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +28,7 @@ public class AuthController {
     public ResponseEntity<RestResponse<Void>> refresh(
             @CookieValue(name = REFRESH_TOKEN) String refreshToken,
             HttpServletResponse response
-    ) {
+    ) throws LilanyusziException {
         AuthSession session = authSessionService.refreshSession(refreshToken);
 
         var accessCookie = authCookieFactory.createAccessCookie(session.accessToken());
@@ -43,7 +44,7 @@ public class AuthController {
     public ResponseEntity<RestResponse<Void>> logout(
             @CookieValue(name = REFRESH_TOKEN, required = false) String refreshToken,
             HttpServletResponse response
-    ) {
+    ) throws LilanyusziException {
         authSessionService.logout(refreshToken);
 
         var deleteAccessCookie = authCookieFactory.deleteAccessCookie();

@@ -1,5 +1,6 @@
 package com.lilanyuszi.app.auth;
 
+import com.lilanyuszi.app.api.LilanyusziException;
 import com.lilanyuszi.app.api.RestResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,7 +37,7 @@ class AuthControllerTest {
     private AuthController authController;
 
     @Test
-    void refreshDelegatesToServiceAddsCookiesAndReturnsNoContent() {
+    void refreshDelegatesToServiceAddsCookiesAndReturnsNoContent() throws LilanyusziException {
         MockHttpServletResponse response = new MockHttpServletResponse();
         AuthSession session = new AuthSession(NEW_ACCESS_TOKEN, NEW_REFRESH_TOKEN);
         ResponseCookie accessCookie = ResponseCookie.from(ACCESS_TOKEN, NEW_ACCESS_TOKEN).build();
@@ -55,7 +56,7 @@ class AuthControllerTest {
     }
 
     @Test
-    void logoutDelegatesToServiceAddsDeleteCookiesAndReturnsNoContent() {
+    void logoutDelegatesToServiceAddsDeleteCookiesAndReturnsNoContent() throws LilanyusziException {
         MockHttpServletResponse response = new MockHttpServletResponse();
         ResponseCookie deleteAccessCookie = ResponseCookie.from(ACCESS_TOKEN, "").maxAge(0).build();
         ResponseCookie deleteRefreshCookie = ResponseCookie.from(REFRESH_TOKEN, "").maxAge(0).build();
@@ -72,7 +73,7 @@ class AuthControllerTest {
     }
 
     @Test
-    void logoutAllowsMissingRefreshToken() {
+    void logoutAllowsMissingRefreshToken() throws LilanyusziException {
         MockHttpServletResponse response = new MockHttpServletResponse();
         ResponseCookie deleteAccessCookie = ResponseCookie.from(ACCESS_TOKEN, "").maxAge(0).build();
         ResponseCookie deleteRefreshCookie = ResponseCookie.from(REFRESH_TOKEN, "").maxAge(0).build();

@@ -1,10 +1,12 @@
 package com.lilanyuszi.app.config;
 
+import com.lilanyuszi.app.api.LilanyusziException;
 import com.lilanyuszi.app.auth.AuthCookieFactory;
 import com.lilanyuszi.app.token.AccessTokenService;
 import com.lilanyuszi.app.token.RefreshTokenService;
 import com.lilanyuszi.app.user.User;
 import com.lilanyuszi.app.user.UserService;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +41,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
             Authentication authentication
-    ) throws IOException {
+    ) throws IOException, ServletException {
 
         OidcUser oidcUser = (OidcUser) authentication.getPrincipal();
 
@@ -47,7 +49,12 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         User user = userService.findOrCreateOAuthUser(oidcUser);
 
         String accessToken = accessTokenService.generateAccessToken(user);
-        String refreshToken = refreshTokenService.createRefreshToken(user);
+        String refreshToken;
+        try {
+            refreshToken = refreshTokenService.createRefreshToken(user);
+        } catch (LilanyusziException e) {
+            throw new ServletException("Failed to create refresh token", e);
+        }
 
         var accessCookie = authCookieFactory.createAccessCookie(accessToken);
         var refreshCookie = authCookieFactory.createRefreshCookie(refreshToken);

@@ -29,7 +29,7 @@ public class GlobalExceptionHandler {
 
     private List<Message> addMessages(Exception ex) {
         if (ex instanceof LilanyusziException lilanyusziException) {
-            return lilanyusziException.getMessages();
+            return Collections.singletonList(lilanyusziException.getExMessage());
         } else if (ex instanceof MethodArgumentNotValidException methodArgumentNotValidException) {
             return methodArgumentNotValidException.getBindingResult().getFieldErrors().stream()
                     .map(error -> new Message(error.getDefaultMessage(), MessageSeverity.ERROR))
