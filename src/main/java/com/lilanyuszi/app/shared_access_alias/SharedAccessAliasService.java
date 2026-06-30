@@ -4,8 +4,8 @@ import com.lilanyuszi.app.api.LilanyusziException;
 import com.lilanyuszi.app.shared_access.SharedAccess;
 import com.lilanyuszi.app.shared_access.SharedAccessService;
 import com.lilanyuszi.app.shared_access_member.SharedAccessMemberService;
+import com.lilanyuszi.app.user.CurrentUserService;
 import com.lilanyuszi.app.user.User;
-import com.lilanyuszi.app.user.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,11 +23,11 @@ public class SharedAccessAliasService {
     private final SharedAccessAliasRepository sharedAccessAliasRepository;
     private final SharedAccessService sharedAccessService;
     private final SharedAccessMemberService sharedAccessMemberService;
-    private final UserService userService;
+    private final CurrentUserService currentUserService;
 
     @Transactional
     public void create(SharedAccessAliasRequest request) throws LilanyusziException {
-        User user = userService.getAuthenticatedUser();
+        User user = currentUserService.getAuthenticatedUser();
         Long sharedAccessId = request.sharedAccessId();
 
         SharedAccess sharedAccess = sharedAccessService.findById(sharedAccessId)

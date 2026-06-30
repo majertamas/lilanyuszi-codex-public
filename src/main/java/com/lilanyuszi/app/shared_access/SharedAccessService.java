@@ -1,13 +1,9 @@
 package com.lilanyuszi.app.shared_access;
 
 import com.lilanyuszi.app.api.LilanyusziException;
-import com.lilanyuszi.app.shared_access_alias.SharedAccessAlias;
-import com.lilanyuszi.app.shared_access_alias.SharedAccessAliasRepository;
-import com.lilanyuszi.app.shared_access_member.SharedAccessMember;
-import com.lilanyuszi.app.shared_access_member.SharedAccessMemberResponse;
 import com.lilanyuszi.app.shared_access_member.SharedAccessMemberService;
+import com.lilanyuszi.app.user.CurrentUserService;
 import com.lilanyuszi.app.user.User;
-import com.lilanyuszi.app.user.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -28,9 +24,9 @@ public class SharedAccessService {
     private static final String SHARED_ACCESS_UNIQUE_CONSTRAINT = "uk_shared_access_owner_type_canonical_name";
 
     private final SharedAccessRepository sharedAccessRepository;
-    private final SharedAccessAliasRepository sharedAccessAliasRepository;
+    private final SharedAccessResponseMapper sharedAccessResponseMapper;
     private final SharedAccessMemberService sharedAccessMemberService;
-    private final UserService userService;
+    private final CurrentUserService currentUserService;
 
     public SharedAccess save(SharedAccess sharedAccess) {
         SharedAccess savedSharedAccess = sharedAccessRepository.save(sharedAccess);
@@ -82,53 +78,10 @@ public class SharedAccessService {
     }
 
     public List<SharedAccessResponse> findAllByUser() throws LilanyusziException {
-        Long userId = userService.getAuthenticatedUserId();
+        Long userId = currentUserService.getAuthenticatedUserId();
         return sharedAccessMemberService.findByUserId(userId).stream()
-                .map(sharedAccessMember -> toResponse(sharedAccessMember, userId))
+                .map(sharedAccessMember -> sharedAccessResponseMapper.toResponse(sharedAccessMember, userId))
                 .toList();
-    }
-
-    private SharedAccessResponse toResponse(SharedAccessMember currentMember, Long userId) {
-        SharedAccess sharedAccess = currentMember.getSharedAccess();
-        String alias = sharedAccessAliasRepository
-                .findBySharedAccessIdAndUserId(sharedAccess.getId(), userId)
-                .map(SharedAccessAlias::getAlias)
-                .orElse(sharedAccess.getName());
-        List<SharedAccessMemberResponse> members = sharedAccessMemberService
-                .findBySharedAccessId(sharedAccess.getId())
-                .stream()
-                .map(this::toMemberResponse)
-                .toList();
-        return new SharedAccessResponse(
-                sharedAccess.getId(),
-                sharedAccess.getName(),
-                alias,
-                sharedAccess.getCreatedAt(),
-                sharedAccess.getUpdatedAt(),
-                sharedAccess.getType(),
-                roleOf(sharedAccess, currentMember.getUser().getId()),
-                members,
-                isOwner(sharedAccess, currentMember.getUser().getId())
-        );
-    }
-
-    private SharedAccessMemberResponse toMemberResponse(SharedAccessMember sharedAccessMember) {
-        SharedAccess sharedAccess = sharedAccessMember.getSharedAccess();
-        return new SharedAccessMemberResponse(
-                sharedAccessMember.getUser().getName(),
-                roleOf(sharedAccess, sharedAccessMember.getUser().getId()),
-                sharedAccessMember.getUser().getId()
-        );
-    }
-
-    private SharedAccessRole roleOf(SharedAccess sharedAccess, Long userId) {
-        return isOwner(sharedAccess, userId)
-                ? SharedAccessRole.OWNER
-                : SharedAccessRole.MEMBER;
-    }
-
-    private boolean isOwner(SharedAccess sharedAccess, Long userId) {
-        return sharedAccess.getOwnerUser().getId().equals(userId);
     }
 
     private String canonicalizeName(String name) {

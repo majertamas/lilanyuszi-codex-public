@@ -7,8 +7,8 @@ import com.lilanyuszi.app.shared_access.SharedAccessType;
 import com.lilanyuszi.app.shared_access_alias.SharedAccessAliasService;
 import com.lilanyuszi.app.shared_access_member.SharedAccessMember;
 import com.lilanyuszi.app.shared_access_member.SharedAccessMemberService;
+import com.lilanyuszi.app.user.CurrentUserService;
 import com.lilanyuszi.app.user.User;
-import com.lilanyuszi.app.user.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,11 +28,12 @@ public class ShoppingListService {
     private final SharedAccessService sharedAccessService;
     private final SharedAccessMemberService sharedAccessMemberService;
     private final SharedAccessAliasService sharedAccessAliasService;
-    private final UserService userService;
+    private final CurrentUserService currentUserService;
+    private final ShoppingListResponseMapper shoppingListResponseMapper;
 
     @Transactional
     public ShoppingListResponse create(ShoppingListCreateRequest request) throws LilanyusziException {
-        User user = userService.getAuthenticatedUser();
+        User user = currentUserService.getAuthenticatedUser();
         SharedAccess sharedAccess = sharedAccessService.create(user, SharedAccessType.SHOPPING, request.name());
 
         ShoppingList shoppingList = shoppingListRepository.save(ShoppingList.builder()
@@ -45,29 +46,29 @@ public class ShoppingListService {
                 .build());
 
         log.info("CREATED SHOPPING LIST ID: {}, OWNER USER ID: {}", shoppingList.getId(), user.getId());
-        return toResponse(shoppingList, user.getId());
+        return shoppingListResponseMapper.toResponse(shoppingList, user.getId());
     }
 
     public ShoppingListResponse findById(Long id) throws LilanyusziException {
-        Long userId = userService.getAuthenticatedUserId();
+        Long userId = currentUserService.getAuthenticatedUserId();
         ShoppingList shoppingList = findAccessibleShoppingList(id, userId);
-        return toResponse(shoppingList, userId);
+        return shoppingListResponseMapper.toResponse(shoppingList, userId);
     }
 
     public List<ShoppingListResponse> findAllForAuthenticatedUser() throws LilanyusziException {
-        Long userId = userService.getAuthenticatedUserId();
+        Long userId = currentUserService.getAuthenticatedUserId();
         List<Long> sharedAccessIds = sharedAccessMemberService.findByUserId(userId).stream()
                 .map(member -> member.getSharedAccess().getId())
                 .toList();
 
         return shoppingListRepository.findBySharedAccessIdIn(sharedAccessIds).stream()
-                .map(shoppingList -> toResponse(shoppingList, userId))
+                .map(shoppingList -> shoppingListResponseMapper.toResponse(shoppingList, userId))
                 .toList();
     }
 
     @Transactional
     public void deleteById(Long id) throws LilanyusziException {
-        User user = userService.getAuthenticatedUser();
+        User user = currentUserService.getAuthenticatedUser();
         ShoppingList shoppingList = shoppingListRepository.findById(id)
                 .orElseThrow(() -> new LilanyusziException(SHOPPING_LIST_NOT_FOUND));
 
@@ -80,7 +81,7 @@ public class ShoppingListService {
 
     @Transactional
     public void leave(Long id) throws LilanyusziException {
-        User user = userService.getAuthenticatedUser();
+        User user = currentUserService.getAuthenticatedUser();
         ShoppingList shoppingList = shoppingListRepository.findById(id)
                 .orElseThrow(() -> new LilanyusziException(SHOPPING_LIST_NOT_FOUND));
         Long sharedAccessId = shoppingList.getSharedAccess().getId();
@@ -112,15 +113,6 @@ public class ShoppingListService {
         }
 
         return shoppingList;
-    }
-
-    private ShoppingListResponse toResponse(ShoppingList shoppingList, Long userId) {
-        SharedAccess sharedAccess = shoppingList.getSharedAccess();
-        String sharedAccessName = sharedAccess.getName();
-        String alias = sharedAccessAliasService
-                .findAliasBySharedAccessIdAndUserId(sharedAccess.getId(), userId)
-                .orElse(sharedAccessName);
-        return new ShoppingListResponse(shoppingList.getId(), sharedAccess.getId(), sharedAccessName, alias, sharedAccess.getCreatedAt(), sharedAccess.getUpdatedAt());
     }
 
     private boolean isOwner(SharedAccess sharedAccess, Long userId) {

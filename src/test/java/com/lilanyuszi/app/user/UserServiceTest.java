@@ -1,6 +1,5 @@
 package com.lilanyuszi.app.user;
 
-import com.lilanyuszi.app.api.LilanyusziException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,10 +11,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
-import java.util.List;
 import java.util.Optional;
 
-import static com.lilanyuszi.app.util.Constant.USER_NOT_FOUND;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -26,7 +23,6 @@ class UserServiceTest {
     private static final String EMAIL = "user@example.com";
     private static final String PICTURE = "https://example.com/user.png";
     private static final String FULL_NAME = "Full Name";
-    private static final String USER_IS_NOT_AUTHENTICATED = "User is not authenticated";
     private static final String NICKNAME = "nickname";
 
     @Mock
@@ -45,7 +41,7 @@ class UserServiceTest {
 
     @Test
     void findByEmailReturnsUserWhenPresent() {
-        User user = user(1L);
+        User user = user();
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
 
         User result = userService.findByEmail(EMAIL);
@@ -64,7 +60,7 @@ class UserServiceTest {
 
     @Test
     void findOrCreateOAuthUserReturnsExistingUser() {
-        User existingUser = user(1L);
+        User existingUser = user();
         when(oidcUser.getEmail()).thenReturn(EMAIL);
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(existingUser));
 
@@ -93,7 +89,7 @@ class UserServiceTest {
 
     @Test
     void getUserDataReturnsMappedUserResponse() {
-        User user = user(1L);
+        User user = user();
         user.setPicture(PICTURE);
         user.setName(FULL_NAME);
         user.setNickName(NICKNAME);
@@ -149,65 +145,6 @@ class UserServiceTest {
         assertEquals(EMAIL, result.getName());
     }
 
-    @Test
-    void getAuthenticatedUserReturnsUserFromSecurityContext() throws LilanyusziException {
-        User user = user(1L);
-        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(EMAIL, null, List.of()));
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
-
-        User result = userService.getAuthenticatedUser();
-
-        assertSame(user, result);
-    }
-
-    @Test
-    void getAuthenticatedUserThrowsWhenAuthenticationIsMissing() {
-        LilanyusziException exception = assertThrows(
-                LilanyusziException.class,
-                () -> userService.getAuthenticatedUser()
-        );
-
-        assertEquals(USER_IS_NOT_AUTHENTICATED, exception.getExMessage().getText());
-    }
-
-    @Test
-    void getAuthenticatedUserThrowsWhenAuthenticationIsNotAuthenticated() {
-        Authentication authentication = new UsernamePasswordAuthenticationToken(EMAIL, null);
-        authentication.setAuthenticated(false);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        LilanyusziException exception = assertThrows(
-                LilanyusziException.class,
-                () -> userService.getAuthenticatedUser()
-        );
-
-        assertEquals(USER_IS_NOT_AUTHENTICATED, exception.getExMessage().getText());
-    }
-
-    @Test
-    void getAuthenticatedUserThrowsWhenUserIsMissing() {
-        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(EMAIL, null, List.of()));
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
-
-        LilanyusziException exception = assertThrows(
-                LilanyusziException.class,
-                () -> userService.getAuthenticatedUser()
-        );
-
-        assertEquals(USER_NOT_FOUND, exception.getExMessage().getText());
-    }
-
-    @Test
-    void getAuthenticatedUserIdReturnsAuthenticatedUserId() throws LilanyusziException {
-        User user = user(42L);
-        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(EMAIL, null, List.of()));
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
-
-        Long userId = userService.getAuthenticatedUserId();
-
-        assertEquals(42L, userId);
-    }
-
     private void mockOidcUser(
             String fullName,
             String name,
@@ -222,9 +159,9 @@ class UserServiceTest {
         when(oidcUser.getPicture()).thenReturn(PICTURE);
     }
 
-    private User user(Long id) {
+    private User user() {
         User user = new User();
-        user.setId(id);
+        user.setId(1L);
         user.setEmail(EMAIL);
         user.setRole(UserRole.USER);
         return user;

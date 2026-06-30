@@ -1,12 +1,10 @@
 package com.lilanyuszi.app.user;
 
 import com.lilanyuszi.app.api.LilanyusziException;
-import com.lilanyuszi.app.util.Constant;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +16,6 @@ import java.util.stream.Stream;
 import static com.lilanyuszi.app.user.UserUtil.*;
 import static com.lilanyuszi.app.util.Constant.USER_NOT_FOUND;
 
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -26,6 +23,7 @@ public class UserService {
 
     public static final String SAVED_USER = "SAVED USER: {}";
     private final UserRepository userRepository;
+    private final CurrentUserService currentUserService;
 
     public User findByEmail(String email) {
         return userRepository.findByEmail(email).orElse(null);
@@ -92,21 +90,6 @@ public class UserService {
         return oidcUser.getEmail();
     }
 
-    public User getAuthenticatedUser() throws LilanyusziException {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new LilanyusziException("User is not authenticated");
-        }
-        String email = (String) authentication.getPrincipal();
-        return userRepository.findByEmail(email).orElseThrow(
-                () -> new LilanyusziException(USER_NOT_FOUND)
-        );
-    }
-
-    public Long getAuthenticatedUserId() throws LilanyusziException {
-        return getAuthenticatedUser().getId();
-    }
-
     private boolean isUsableName(String value) {
         return value != null
                 && !value.isBlank()
@@ -117,7 +100,7 @@ public class UserService {
     public User addOrModify(String userAttribute, Map<String, String> body) throws LilanyusziException {
 
         User user = userRepository
-                .findById(getAuthenticatedUserId())
+                .findById(currentUserService.getAuthenticatedUserId())
                 .orElseThrow(() -> new LilanyusziException(USER_NOT_FOUND));
 
         if (userAttribute.equalsIgnoreCase(UserAttribute.PICTURE.name().toLowerCase())) {
