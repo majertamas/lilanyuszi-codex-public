@@ -2,10 +2,8 @@ package com.lilanyuszi.app.config;
 
 import com.lilanyuszi.app.api.LilanyusziException;
 import com.lilanyuszi.app.auth.AuthCookieFactory;
-import com.lilanyuszi.app.token.AccessTokenService;
-import com.lilanyuszi.app.token.RefreshTokenService;
-import com.lilanyuszi.app.user.User;
-import com.lilanyuszi.app.user.UserService;
+import com.lilanyuszi.app.auth.AuthSession;
+import com.lilanyuszi.app.auth.AuthSessionService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -29,10 +27,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
     @Value("${app.frontend.url.me}")
     private String frontendUrl;
-
-    private final UserService userService;
-    private final AccessTokenService accessTokenService;
-    private final RefreshTokenService refreshTokenService;
+    private final AuthSessionService authSessionService;
     private final AuthCookieFactory authCookieFactory;
 
     @Override
@@ -46,18 +41,15 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         OidcUser oidcUser = (OidcUser) authentication.getPrincipal();
 
         assert oidcUser != null;
-        User user = userService.findOrCreateOAuthUser(oidcUser);
-
-        String accessToken = accessTokenService.generateAccessToken(user);
-        String refreshToken;
+        AuthSession session;
         try {
-            refreshToken = refreshTokenService.createRefreshToken(user);
+            session = authSessionService.createOAuthSession(oidcUser);
         } catch (LilanyusziException e) {
-            throw new ServletException("Failed to create refresh token", e);
+            throw new ServletException(e);
         }
 
-        var accessCookie = authCookieFactory.createAccessCookie(accessToken);
-        var refreshCookie = authCookieFactory.createRefreshCookie(refreshToken);
+        var accessCookie = authCookieFactory.createAccessCookie(session.accessToken());
+        var refreshCookie = authCookieFactory.createRefreshCookie(session.refreshToken());
 
         response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
